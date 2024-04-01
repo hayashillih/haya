@@ -1,0 +1,143 @@
+const express = require('express');
+const mysql = require('mysql');
+
+const app = express();
+const port = 3000;
+
+// Database connection
+const dbConnection = mysql.createConnection({
+    host: 'localhost',
+    user: 'username',
+    password: 'password',
+    database: 'your_database_name'
+});
+
+dbConnection.connect((err) => {
+    if (err) {
+        console.error('Error connecting to database:', err);
+        return;
+    }
+    console.log('Connected to database');
+});
+
+// Express middleware to parse JSON requests
+app.use(express.json());
+
+// Routes
+app.post('/projects', (req, res) => {
+    const project = req.body;
+    createProject(project, (err, result) => {
+        if (err) {
+            console.error('Error creating project:', err);
+            res.status(500).send('Error creating project');
+            return;
+        }
+        res.status(201).json(result);
+    });
+});
+
+app.post('/tasks', (req, res) => {
+    const task = req.body;
+    createTask(task, (err, result) => {
+        if (err) {
+            console.error('Error creating task:', err);
+            res.status(500).send('Error creating task');
+            return;
+        }
+        res.status(201).json(result);
+    });
+});
+
+app.post('/assignments', (req, res) => {
+    const assignment = req.body;
+    assignTask(assignment, (err, result) => {
+        if (err) {
+            console.error('Error assigning task:', err);
+            res.status(500).send('Error assigning task');
+            return;
+        }
+        res.status(201).json(result);
+    });
+});
+
+app.post('/messages/:projectId', (req, res) => {
+    const projectId = req.params.projectId;
+    const message = req.body;
+    sendMessage(projectId, message, (err, result) => {
+        if (err) {
+            console.error('Error sending message:', err);
+            res.status(500).send('Error sending message');
+            return;
+        }
+        res.status(201).json(result);
+    });
+});
+
+app.post('/user-messages', (req, res) => {
+    const message = req.body;
+    sendMessageToUser(message, (err) => {
+        if (err) {
+            console.error('Error sending message to user:', err);
+            res.status(500).send('Error sending message to user');
+            return;
+        }
+        res.status(204).send();
+    });
+});
+
+
+function createProject(project, callback) {
+    dbConnection.query('INSERT INTO projects SET ?', project, (err, result) => {
+        if (err) {
+            callback(err, null);
+            return;
+        }
+        callback(null, result);
+    });
+}
+
+function createTask(task, callback) {
+    dbConnection.query('INSERT INTO tasks SET ?', task, (err, result) => {
+        if (err) {
+            callback(err, null);
+            return;
+        }
+        callback(null, result);
+    });
+}
+
+function assignTask(assignment, callback) {
+    dbConnection.query('INSERT INTO assignments SET ?', assignment, (err, result) => {
+        if (err) {
+            callback(err, null);
+            return;
+        }
+        callback(null, result);
+    });
+}
+
+function sendMessage(projectId, message, callback) {
+    message.idProjects = projectId;
+    dbConnection.query('INSERT INTO messaging SET ?', message, (err, result) => {
+        if (err) {
+            callback(err, null);
+            return;
+        }
+        callback(null, result);
+    });
+}
+
+function sendMessageToUser(message, callback) {
+    dbConnection.query('INSERT INTO messaging SET ?', message, (err, result) => {
+        if (err) {
+            callback(err);
+            return;
+        }
+        callback(null);
+    });
+}
+
+
+app.listen(port, () => {
+    console.log(`Server is listening at http://localhost:${port}`);
+});
